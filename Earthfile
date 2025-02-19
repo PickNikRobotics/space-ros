@@ -133,6 +133,7 @@ spaceros-artifacts:
 
   COPY ros2.repos ./
   COPY excluded-pkgs.txt ./
+  COPY colcon_ws_config colcon_ws_config
 
   # this ensure the vcs import and export results are not cached
   RUN --no-cache echo "Cloning spaceros repo artifacts"
@@ -146,6 +147,7 @@ spaceros-artifacts:
   SAVE ARTIFACT ros2.repos
   SAVE ARTIFACT exact.repos # `ros2.repos`, but with pinned versions (e.g. SHAs instead of branches)
   SAVE ARTIFACT excluded-pkgs.txt
+  SAVE ARTIFACT colcon_ws_config
 
 sources:
   FROM +setup
@@ -235,15 +237,22 @@ build:
 build-dev:
   FROM +rosdep
   ARG tag='jazzy'
+  COPY +spaceros-artifacts/colcon_ws_config colcon_ws_config
+  RUN python3 colcon_ws_config/prepare_workspace.py # outputs spaceros-linters.meta
 
+# to build with ikos:
+#  ikos-scan colcon build --build-base build_ikos --install-base install_ikos --metas ./spaceros-linters.meta --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON --no-warn-unu
+# or replace `ikos-scan` above with `CC="ikos-scan-cc" CXX="ikos-scan-c++" LD="ikos-scan-cc"`
+# If starting from the saved dev image here, set export IKOS_SCAN_NOTIFIER_FILES="" in the console (or here). Not this is not quite working yet but it is progress.
   RUN colcon build \
+      --metas ./spaceros-linters.meta \
       --cmake-args \
       -DCMAKE_BUILD_TYPE=RelWithDebInfo \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
       --no-warn-unused-cli
 
   # TODO: Consider pushing pre-built dev images to the registry.
-  # SAVE IMAGE --push osrf/space-ros-dev:latest osrf/space-ros-dev:$tag
+  SAVE IMAGE osrf/space-ros-dev:latest
 
 build-testing:
   FROM +build-dev
@@ -252,7 +261,7 @@ build-testing:
       colcon test \
         --retest-until-pass 2 \
         --packages-skip ament_lint \
-        --ctest-args -LE "(ikos|xfail)" \
+        --ctest-args -LE "xfail" \
         --pytest-args -m "not xfail"
   RUN . install/setup.sh && \
       ros2 run process_sarif make_build_archive
