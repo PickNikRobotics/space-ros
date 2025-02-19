@@ -133,6 +133,7 @@ spaceros-artifacts:
 
   COPY ros2.repos ./
   COPY excluded-pkgs.txt ./
+  COPY spaceros-pkgs.txt ./
 
   # this ensure the vcs import and export results are not cached
   RUN --no-cache echo "Cloning spaceros repo artifacts"
@@ -146,6 +147,7 @@ spaceros-artifacts:
   SAVE ARTIFACT ros2.repos
   SAVE ARTIFACT exact.repos # `ros2.repos`, but with pinned versions (e.g. SHAs instead of branches)
   SAVE ARTIFACT excluded-pkgs.txt
+  SAVE ARTIFACT spaceros-pkgs.txt
 
 sources:
   FROM +setup
