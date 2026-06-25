@@ -1,4 +1,4 @@
-name: Earthly build
+name: Docker build
 on:
   workflow_dispatch:
   push:
@@ -9,21 +9,22 @@ on:
     - cron: "0 11 * * *"
 jobs:
   build-test:
-    env:
-      VCS_REF: ${{ github.sha }}
-
     runs-on: ubuntu-latest
     steps:
+      # The build-test target runs a full dev build plus tests; reclaim disk
+      # space first to avoid running out on the runner.
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@v1.3.1
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: Set up earthly
-        run: |
-          sudo wget https://github.com/earthly/earthly/releases/latest/download/earthly-linux-amd64 -O /usr/local/bin/earthly
-          sudo chmod 755 /usr/local/bin/earthly
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Build Test Space ROS
         id: build
         run: |
-          earthly --ci --output +build-test
+          docker buildx build --target export-build-test \
+            --build-arg IMAGE_VARIANT=dev \
+            --output type=local,dest=log/build_results_archives .
           echo "archivename=$(basename log/build_results_archives/build_results_*.tar.bz2)" >> $GITHUB_ENV
       - name: Upload build results archive
         uses: actions/upload-artifact@v4
@@ -45,22 +46,27 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Sanitize image tag
         run: echo "IMAGE_TAG=${IMAGE_TAG//\//-}" >> "$GITHUB_ENV"
 
-      - name: Set up earthly
-        run: |
-          sudo wget https://github.com/earthly/earthly/releases/latest/download/earthly-linux-amd64 -O /usr/local/bin/earthly
-          sudo chmod 755 /usr/local/bin/earthly
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Build spaceros image without pushing
         run: |
-          earthly --ci --output +push-main-image \
-            --VCS_REF="$VCS_REF" \
-            --IMAGE_TAG="$IMAGE_TAG" \
-            --IMAGE_NAME="$DOCKER_HUB_IMAGE_NAME"
+          docker buildx build --target image \
+            --build-arg IMAGE_VARIANT=main \
+            --label "org.label-schema.schema-version=1.0" \
+            --label "org.label-schema.name=Space ROS - Core/Main" \
+            --label "org.label-schema.description=Core version of the Space ROS platform" \
+            --label "org.label-schema.vendor=Open Robotics" \
+            --label "org.label-schema.url=https://github.com/space-ros" \
+            --label "org.label-schema.vcs-url=https://github.com/space-ros/space-ros" \
+            --label "org.label-schema.vcs-ref=$VCS_REF" \
+            --tag "$DOCKER_HUB_IMAGE_NAME:$IMAGE_TAG" \
+            --load .
 
       # Login and push the main builds to GHCR
       - name: Login to GHCR
@@ -110,22 +116,27 @@ jobs:
         uses: jlumbroso/free-disk-space@v1.3.1
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Sanitize image tag
         run: echo "IMAGE_TAG=${IMAGE_TAG//\//-}" >> "$GITHUB_ENV"
 
-      - name: Set up earthly
-        run: |
-          sudo wget https://github.com/earthly/earthly/releases/latest/download/earthly-linux-amd64 -O /usr/local/bin/earthly
-          sudo chmod 755 /usr/local/bin/earthly
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Build spaceros dev image without pushing
         run: |
-          earthly --ci --output +push-dev-image \
-            --VCS_REF="$VCS_REF" \
-            --IMAGE_TAG="$IMAGE_TAG" \
-            --IMAGE_NAME="$DOCKER_HUB_IMAGE_NAME"
+          docker buildx build --target image \
+            --build-arg IMAGE_VARIANT=dev \
+            --label "org.label-schema.schema-version=1.0" \
+            --label "org.label-schema.name=Space ROS - Dev" \
+            --label "org.label-schema.description=Dev version of the Space ROS platform" \
+            --label "org.label-schema.vendor=Open Robotics" \
+            --label "org.label-schema.url=https://github.com/space-ros" \
+            --label "org.label-schema.vcs-url=https://github.com/space-ros/space-ros" \
+            --label "org.label-schema.vcs-ref=$VCS_REF" \
+            --tag "$DOCKER_HUB_IMAGE_NAME:$IMAGE_TAG" \
+            --load .
 
       # Only push the main dev builds to GHCR
       - name: Login to GHCR

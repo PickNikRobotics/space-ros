@@ -11,16 +11,18 @@ For information on the release process refere to the [release docs](./docs/RELEA
 
 ## Building the Space ROS image
 
-1. Install [Earthly](https://earthly.dev/get-earthly/) (v0.8.0 or later).
+1. Install [Docker](https://docs.docker.com/get-docker/) (with Buildx, included in current releases).
 2. You can build the Space ROS image using the following command:
 
 ```bash
 # To build the base Space ROS image
-earthly +main-image
+make main-image
 
 # To build the dev Space ROS image
-earthly +dev-image
+make dev-image
 ```
+
+These targets wrap `docker buildx build`; see the [usage instructions](./docs/USAGE.md) for the equivalent raw `docker` commands.
 
 ## Contribution rules
 
