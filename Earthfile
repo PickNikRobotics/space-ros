@@ -342,8 +342,8 @@ build-test:
 prepare-image:
   FROM +pre-installation
 
-  # Add missing dependencies
-  RUN apt-get update && apt-get install -y \
+  # Add missing runtime dependencies
+  RUN apt-get update && apt-get install -y --no-install-recommends \
         libspdlog-dev \
         python3-catkin-pkg \
         python3-lark \
@@ -420,7 +420,7 @@ POST_INSTALLATION:
     RUN apt-get update && apt-get install -y \
           $(grep -v '^#' excluded-deps.txt) \
           && rm -rf excluded-deps.txt
-  # If Core, we only care about the install, and then clear the workspace
+  # If Core, we only care about the install, so clear the workspace
   ELSE
     RUN rm -rf ${WORKSPACE_DIR}
   END
