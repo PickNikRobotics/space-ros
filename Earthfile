@@ -73,9 +73,11 @@ pre-installation:
         bison \
         wget \
         gnupg \
+        less \
         lsb-release \
         python3-pip \
         python3-setuptools \
+        ssh-client \
         software-properties-common
   RUN add-apt-repository universe
   RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
