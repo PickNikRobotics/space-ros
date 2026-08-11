@@ -110,6 +110,9 @@ Commands:
   Call `ros2 <command> -h` for more detailed usage.
 ```
 
+`osrf/space-ros:latest` is a runtime image: it carries no compiler, no CMake, and no colcon, and the headers and CMake config files of the Space ROS install are stripped from it.
+To build against Space ROS, use `osrf/space-ros:dev` (see [SpaceROS for development](#spaceros-for-development)).
+
 Space ROS promotes building projects from source code, and more instructions can be found in the [Space ROS documentation](https://space.ros.org).
 
 
