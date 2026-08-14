@@ -2,7 +2,7 @@
 # include dependencies and linting tools required by spaceros
 # into every ROS package without modifying 'CMakeLists.txt' files
 
-# The code can be injected into packages with `CMAKE_PROJECT_INCLUDE` variable 
+# The code can be injected into packages with `CMAKE_PROJECT_INCLUDE` variable
 # Check: https://cmake.org/cmake/help/latest/variable/CMAKE_PROJECT_INCLUDE.html
 
 cmake_minimum_required(VERSION 3.15)
