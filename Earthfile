@@ -65,7 +65,7 @@ pre-installation:
   # The main variation is getting Space ROS sources instead of the Rolling sources.
 
   # Add the ROS 2 apt repository
-  RUN apt-get update && apt-get install -y \
+  RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         git \
         cmake \
@@ -92,7 +92,7 @@ pre-installation:
 setup:
   FROM +pre-installation
   # Install required software development tools and ROS tools (and vim included for convenience)
-  RUN apt-get install -y python3-rosinstall-generator
+  RUN apt-get install -y --no-install-recommends python3-rosinstall-generator
 
   COPY scripts ./
   COPY excluded-pkgs.txt spaceros-pkgs.txt spaceros.repos ./
@@ -116,7 +116,7 @@ setup:
 ikos-install:
   FROM +pre-installation
 
-  RUN apt-get update && apt-get install --yes \
+  RUN apt-get update && apt-get install --yes --no-install-recommends \
       gcc \
       g++ \
       cmake \
@@ -158,7 +158,7 @@ ikos-install:
 
 ADD_IKOS:
   FUNCTION
-    RUN apt-get update && apt-get install -y \
+    RUN apt-get update && apt-get install -y --no-install-recommends \
           gcc \
           g++ \
           cmake \
@@ -192,7 +192,7 @@ ADD_IKOS:
 sources:
   FROM +setup
 
-  RUN apt-get update && apt-get install -y python3-vcstool
+  RUN apt-get update && apt-get install -y --no-install-recommends python3-vcstool
   RUN mkdir src -p \
       && vcs import --retry 3 src < output.repos \
       && vcs export --exact src > exact.repos
@@ -210,7 +210,7 @@ rosdep:
   FROM +pre-installation
 
   # Rosdep updates
-  RUN apt-get update && apt-get install -y python3-rosdep \
+  RUN apt-get update && apt-get install -y --no-install-recommends python3-rosdep \
       && rosdep init \
       && rosdep update
 
@@ -233,7 +233,7 @@ rosdep:
         && echo "#!/bin/bash" > rosdeps.sh \
         && echo "apt-get update" >> rosdeps.sh \
         && echo "apt-get install -y \\" >> rosdeps.sh \
-        && grep -v -F -f excluded-deps.txt rosdeps.txt | sed 's/^/  /' >> rosdeps.sh \
+        && grep -v -F -f excluded-deps.txt rosdeps.txt | sed 's/^\( *\)apt-get install -y/\1apt-get install -y --no-install-recommends/' | sed 's/^/  /' >> rosdeps.sh \
         && chmod +x rosdeps.sh
 
   # The generated shell script is used by the prepare-image stage prior to building the image
@@ -250,7 +250,7 @@ build:
   FROM +rosdep
 
   # Uncrustify Vendor has vcstool as a dependency
-  RUN apt-get update && apt-get install -y \
+  RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-vcstool \
         python3-colcon-common-extensions
   RUN bash rosdeps.sh
@@ -301,7 +301,7 @@ build-test:
   FROM +build --IMAGE_VARIANT=dev
 
   # Install dependencies for testing
-  RUN apt-get update && apt-get install -y \
+  RUN apt-get update && apt-get install -y --no-install-recommends \
         clang-tidy \
         cppcheck \
         google-mock \
@@ -423,7 +423,7 @@ POST_INSTALLATION:
     DO +ADD_IKOS
 
     COPY excluded-deps.txt ./
-    RUN apt-get update && apt-get install -y \
+    RUN apt-get update && apt-get install -y --no-install-recommends \
           $(grep -v '^#' excluded-deps.txt) \
           && rm -rf excluded-deps.txt
   # If Core, we only care about the install, so clear the workspace
