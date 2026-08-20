@@ -73,7 +73,8 @@ pre-installation:
         python3-pip \
         python3-setuptools \
         ssh-client \
-        software-properties-common
+        software-properties-common \
+      && rm -rf /var/lib/apt/lists/*
 
   # Set the locale
   RUN locale-gen en_US en_US.UTF-8
@@ -360,12 +361,14 @@ prepare-image:
         python3-psutil \
         ros-dev-tools \
         sudo \
-        tzdata
+        tzdata \
+      && rm -rf /var/lib/apt/lists/*
 
   # Prepare the image
   RUN mkdir -p ${SPACEROS_DIR}
   COPY +rosdep/rosdeps.sh ${SPACEROS_DIR}/rosdeps.sh
-  RUN bash ${SPACEROS_DIR}/rosdeps.sh
+  RUN bash ${SPACEROS_DIR}/rosdeps.sh \
+      && rm -rf /var/lib/apt/lists/*
 
 ###############################################################################
 ### Prepare Image Stage
