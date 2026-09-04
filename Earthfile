@@ -54,18 +54,12 @@ pre-installation:
   RUN mkdir -p ${WORKSPACE_DIR}
   WORKDIR ${WORKSPACE_DIR}
 
-  # Set the locale
-  RUN apt-get update && apt-get install -y locales
-  RUN locale-gen en_US en_US.UTF-8
-  RUN update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
-  ENV LANG=en_US.UTF-8
-
   # The following commands are based on the source install for ROS 2 Rolling Ridley.
   # See: https://docs.ros.org/en/ros2_documentation/rolling/Installation/Ubuntu-Development-Setup.html
   # The main variation is getting Space ROS sources instead of the Rolling sources.
 
   # Add the ROS 2 apt repository
-  RUN apt-get update && apt-get install -y \
+  RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         git \
         cmake \
@@ -74,15 +68,23 @@ pre-installation:
         wget \
         gnupg \
         less \
+        locales \
         lsb-release \
         python3-pip \
         python3-setuptools \
         ssh-client \
-        software-properties-common
-  RUN add-apt-repository universe
+        software-properties-common \
+      && rm -rf /var/lib/apt/lists/*
+
+  # Set the locale
+  RUN locale-gen en_US en_US.UTF-8
+  RUN update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+  ENV LANG=en_US.UTF-8
+
+  # add-apt-repository refreshes the lists itself unless told not to
+  RUN add-apt-repository -n universe
   RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
-  RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null \
-    && apt update
+  RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
 ###############################################################################
 ### Setup Stage
@@ -92,7 +94,7 @@ pre-installation:
 setup:
   FROM +pre-installation
   # Install required software development tools and ROS tools (and vim included for convenience)
-  RUN apt-get install -y python3-rosinstall-generator
+  RUN apt-get update && apt-get install -y --no-install-recommends python3-rosinstall-generator
 
   COPY scripts ./
   COPY excluded-pkgs.txt spaceros-pkgs.txt spaceros.repos ./
@@ -116,7 +118,7 @@ setup:
 ikos-install:
   FROM +pre-installation
 
-  RUN apt-get update && apt-get install --yes \
+  RUN apt-get update && apt-get install --yes --no-install-recommends \
       gcc \
       g++ \
       cmake \
@@ -158,7 +160,7 @@ ikos-install:
 
 ADD_IKOS:
   FUNCTION
-    RUN apt-get update && apt-get install -y \
+    RUN apt-get update && apt-get install -y --no-install-recommends \
           gcc \
           g++ \
           cmake \
@@ -192,7 +194,7 @@ ADD_IKOS:
 sources:
   FROM +setup
 
-  RUN apt-get update && apt-get install -y python3-vcstool
+  RUN apt-get update && apt-get install -y --no-install-recommends python3-vcstool
   RUN mkdir src -p \
       && vcs import --retry 3 src < output.repos \
       && vcs export --exact src > exact.repos
@@ -210,7 +212,7 @@ rosdep:
   FROM +pre-installation
 
   # Rosdep updates
-  RUN apt-get update && apt-get install -y python3-rosdep \
+  RUN apt-get update && apt-get install -y --no-install-recommends python3-rosdep \
       && rosdep init \
       && rosdep update
 
@@ -233,7 +235,7 @@ rosdep:
         && echo "#!/bin/bash" > rosdeps.sh \
         && echo "apt-get update" >> rosdeps.sh \
         && echo "apt-get install -y \\" >> rosdeps.sh \
-        && grep -v -F -f excluded-deps.txt rosdeps.txt | sed 's/^/  /' >> rosdeps.sh \
+        && grep -v -F -f excluded-deps.txt rosdeps.txt | sed 's/^\( *\)apt-get install -y/\1apt-get install -y --no-install-recommends/' | sed 's/^/  /' >> rosdeps.sh \
         && chmod +x rosdeps.sh
 
   # The generated shell script is used by the prepare-image stage prior to building the image
@@ -250,7 +252,7 @@ build:
   FROM +rosdep
 
   # Uncrustify Vendor has vcstool as a dependency
-  RUN apt-get update && apt-get install -y \
+  RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-vcstool \
         python3-colcon-common-extensions
   RUN bash rosdeps.sh
@@ -301,7 +303,7 @@ build-test:
   FROM +build --IMAGE_VARIANT=dev
 
   # Install dependencies for testing
-  RUN apt-get update && apt-get install -y \
+  RUN apt-get update && apt-get install -y --no-install-recommends \
         clang-tidy \
         cppcheck \
         google-mock \
@@ -359,12 +361,14 @@ prepare-image:
         python3-psutil \
         ros-dev-tools \
         sudo \
-        tzdata
+        tzdata \
+      && rm -rf /var/lib/apt/lists/*
 
   # Prepare the image
   RUN mkdir -p ${SPACEROS_DIR}
   COPY +rosdep/rosdeps.sh ${SPACEROS_DIR}/rosdeps.sh
-  RUN bash ${SPACEROS_DIR}/rosdeps.sh
+  RUN bash ${SPACEROS_DIR}/rosdeps.sh \
+      && rm -rf /var/lib/apt/lists/*
 
 ###############################################################################
 ### Prepare Image Stage
@@ -423,7 +427,7 @@ POST_INSTALLATION:
     DO +ADD_IKOS
 
     COPY excluded-deps.txt ./
-    RUN apt-get update && apt-get install -y \
+    RUN apt-get update && apt-get install -y --no-install-recommends \
           $(grep -v '^#' excluded-deps.txt) \
           && rm -rf excluded-deps.txt
   # If Core, we only care about the install, so clear the workspace
