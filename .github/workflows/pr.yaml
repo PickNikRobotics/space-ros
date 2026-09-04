@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone project
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
       - name: Install dependencies
         run: python3 -m pip install vcstool yamllint
       - name: Validate formatting
@@ -27,12 +27,12 @@ jobs:
     name: Space ROS Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: space-ros/space-ros-lint-action@main
 
   commit_message_standards:
     name: Space ROS Commit Message Standards
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: space-ros/check-commit-message-action@main

@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
       - name: Set up earthly
         run: |
           sudo wget https://github.com/earthly/earthly/releases/latest/download/earthly-linux-amd64 -O /usr/local/bin/earthly
@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Sanitize image tag
         run: echo "IMAGE_TAG=${IMAGE_TAG//\//-}" >> "$GITHUB_ENV"
@@ -110,7 +110,7 @@ jobs:
         uses: jlumbroso/free-disk-space@v1.3.1
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Sanitize image tag
         run: echo "IMAGE_TAG=${IMAGE_TAG//\//-}" >> "$GITHUB_ENV"
