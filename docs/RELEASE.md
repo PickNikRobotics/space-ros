@@ -5,7 +5,7 @@
 git clone https://github.com/space-ros/space-ros.git
 cd space-ros
 git checkout -b <release-id>
-earthly build +setup
+make generate-repos
 git add ros2.repos
 git commit -m "Update repos file for <release-id> release"
 ```
