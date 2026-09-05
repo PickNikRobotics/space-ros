@@ -26,6 +26,7 @@
 ###############################################################################
 
 # Global build arguments. Re-declare without a default in any stage that needs them.
+# hadolint ignore=DL3064
 ARG USERNAME="spaceros-user"
 # Selects build and runtime behaviour: "main" or "dev".
 ARG IMAGE_VARIANT="main"
@@ -35,6 +36,7 @@ ARG IMAGE_VARIANT="main"
 # Sets up the base image with the dependencies required by the later stages.
 ###############################################################################
 FROM ubuntu:noble AS pre-installation
+# hadolint ignore=DL3064
 ARG USERNAME
 
 # Fail a RUN on the first error in a pipe (DL4006). Inherited across FROM.
@@ -165,6 +167,7 @@ FROM pre-installation AS ikos-main
 RUN mkdir -p /opt/ikos
 
 # `COPY --from` does not expand build args but `FROM` does, so select the stage here.
+# hadolint ignore=DL3006
 FROM ikos-${IMAGE_VARIANT} AS ikos-selected
 
 ###############################################################################
@@ -361,6 +364,7 @@ RUN bash "${SPACEROS_DIR}/rosdeps.sh" \
 ###############################################################################
 FROM prepare-image AS image-common
 ARG IMAGE_VARIANT
+# hadolint ignore=DL3064
 ARG USERNAME
 # hadolint does not track SHELL inheritance across FROM, so re-declare it.
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -450,4 +454,5 @@ FROM image-common AS image-dev
 ENV PATH="/opt/ikos/bin:${PATH}"
 ENV IKOS_SCAN_NOTIFIER_FILES=""
 
+# hadolint ignore=DL3006
 FROM image-${IMAGE_VARIANT} AS image
