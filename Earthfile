@@ -259,8 +259,12 @@ build:
   RUN mkdir -p ${SPACEROS_DIR}
 
   DO +BUILD_WORKSPACE --IMAGE_VARIANT=${IMAGE_VARIANT}
+  # Built package names, for downstream rosinstall_generator --exclude and rosdep --skip-keys.
+  RUN colcon list --names-only --base-paths src > installed-pkgs.txt \
+      && sort -o installed-pkgs.txt installed-pkgs.txt
 
   SAVE ARTIFACT ${SPACEROS_DIR} spaceros_install
+  SAVE ARTIFACT installed-pkgs.txt
 
 BUILD_WORKSPACE:
   FUNCTION
@@ -381,6 +385,7 @@ image:
 
   COPY +build/spaceros_install ${SPACEROS_DIR}
   COPY +sources/exact.repos ${SPACEROS_DIR}/scripts/spaceros.repos
+  COPY +build/installed-pkgs.txt ${SPACEROS_DIR}/scripts/installed-pkgs.txt
   COPY scripts/generate-repos.sh scripts/merge-repos.py ${SPACEROS_DIR}/scripts/
   RUN chmod +x ${SPACEROS_DIR}/scripts/generate-repos.sh ${SPACEROS_DIR}/scripts/merge-repos.py \
       && mv ${SPACEROS_DIR}/rosdeps.sh ${SPACEROS_DIR}/scripts/rosdeps.sh
